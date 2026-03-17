@@ -1,0 +1,33 @@
+export const theme = {
+  colors: {
+    background: "#F3F6F8",
+    surface: "#FFFFFF",
+    border: "#D9E2EC",
+    textPrimary: "#102A43",
+    textSecondary: "#486581",
+    primary: "#0B6E4F",
+    primaryPressed: "#09553D",
+    secondary: "#E7EEF4",
+    secondaryPressed: "#D7E3EC",
+    danger: "#C81E4A",
+    dangerPressed: "#A8183D",
+    successBg: "#E8F7EF",
+    successText: "#0B6E4F",
+    errorBg: "#FDECEF",
+    errorText: "#A61B3C",
+    warningBg: "#FFF4E5",
+    warningText: "#9A6700",
+  },
+  radius: {
+    sm: 8,
+    md: 12,
+    lg: 16,
+  },
+  spacing: {
+    xs: 6,
+    sm: 10,
+    md: 16,
+    lg: 20,
+    xl: 28,
+  },
+};

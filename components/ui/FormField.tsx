@@ -22,6 +22,8 @@ interface FormFieldProps {
     | "password"
     | "new-password"
     | "off";
+  multiline?: boolean;
+  numberOfLines?: number;
   error?: string;
   editable?: boolean;
 }
@@ -35,6 +37,8 @@ export const FormField = ({
   autoCapitalize = "sentences",
   keyboardType,
   autoComplete,
+  multiline = false,
+  numberOfLines = 1,
   error,
   editable = true,
 }: FormFieldProps) => {
@@ -50,7 +54,14 @@ export const FormField = ({
         autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
         autoComplete={autoComplete}
-        style={[styles.input, error ? styles.inputError : null]}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? "top" : "center"}
+        style={[
+          styles.input,
+          multiline ? styles.textArea : null,
+          error ? styles.inputError : null,
+        ]}
         editable={editable}
       />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -75,6 +86,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     paddingHorizontal: theme.spacing.md,
     color: theme.colors.textPrimary,
+  },
+  textArea: {
+    minHeight: 96,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
   },
   inputError: {
     borderColor: theme.colors.errorText,

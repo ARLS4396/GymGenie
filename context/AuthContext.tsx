@@ -14,6 +14,10 @@ import {
   ID,
   isAppwriteConfigured,
 } from "@/lib/appwrite";
+import {
+  fetchStoredProfile,
+  upsertStoredProfile,
+} from "@/lib/profileBackend";
 import type {
   AuthContextValue,
   AuthStatus,
@@ -22,6 +26,7 @@ import type {
 } from "@/types/auth";
 import type {
   ProfilePrefs,
+  ProfileRecord,
   ProfileUpdateInput,
   UserProfile,
 } from "@/types/profile";
@@ -31,15 +36,20 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
-const mapUserToProfile = (user: Models.User<ProfilePrefs>): UserProfile => {
-  const username = user.prefs?.username?.trim();
-  const fitnessGoal = user.prefs?.fitnessGoal?.trim();
-  const profileImage = user.prefs?.profileImage?.trim();
+const mapUserToProfile = (
+  user: Models.User<ProfilePrefs>,
+  storedProfile?: ProfileRecord | null,
+): UserProfile => {
+  const username = storedProfile?.username?.trim() ?? user.prefs?.username?.trim();
+  const fitnessGoal =
+    storedProfile?.fitnessGoal?.trim() ?? user.prefs?.fitnessGoal?.trim();
+  const profileImage =
+    storedProfile?.profileImage?.trim() ?? user.prefs?.profileImage?.trim();
 
   return {
     id: user.$id,
-    fullName: user.name,
-    email: user.email,
+    fullName: storedProfile?.fullName ?? user.name,
+    email: storedProfile?.email ?? user.email,
     username: username && username.length > 0 ? username : user.email.split("@")[0],
     fitnessGoal:
       fitnessGoal && fitnessGoal.length > 0 ? fitnessGoal : "General fitness",
@@ -47,8 +57,39 @@ const mapUserToProfile = (user: Models.User<ProfilePrefs>): UserProfile => {
   };
 };
 
+const hasMissingAccountScope = (error: unknown): boolean =>
+  error instanceof AppwriteException &&
+  error.message.includes("missing scopes") &&
+  error.message.includes('"account"');
+
 const isUnauthorized = (error: unknown): boolean =>
-  error instanceof AppwriteException && error.code === 401;
+  error instanceof AppwriteException &&
+  (error.code === 401 || hasMissingAccountScope(error));
+
+const loadUserProfile = async (
+  currentUser: Models.User<ProfilePrefs>,
+): Promise<UserProfile> => {
+  let storedProfile = await fetchStoredProfile(currentUser.$id);
+
+  if (!storedProfile) {
+    storedProfile = await syncStoredProfile(currentUser);
+  }
+
+  return mapUserToProfile(currentUser, storedProfile);
+};
+
+const syncStoredProfile = async (
+  currentUser: Models.User<ProfilePrefs>,
+): Promise<ProfileRecord | null> => {
+  return upsertStoredProfile({
+    userId: currentUser.$id,
+    fullName: currentUser.name,
+    email: currentUser.email,
+    username: currentUser.prefs?.username ?? currentUser.email.split("@")[0],
+    fitnessGoal: currentUser.prefs?.fitnessGoal ?? "General fitness",
+    profileImage: currentUser.prefs?.profileImage,
+  });
+};
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [status, setStatus] = useState<AuthStatus>("loading");
@@ -68,7 +109,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
     try {
       const currentUser = await account.get<ProfilePrefs>();
-      setUser(mapUserToProfile(currentUser));
+      const nextUser = await loadUserProfile(currentUser);
+      setUser(nextUser);
       setStatus("authenticated");
     } catch (error) {
       if (isUnauthorized(error)) {
@@ -93,7 +135,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
 
     const currentUser = await account.get<ProfilePrefs>();
-    setUser(mapUserToProfile(currentUser));
+    const nextUser = await loadUserProfile(currentUser);
+    setUser(nextUser);
     setStatus("authenticated");
   }, []);
 
@@ -117,7 +160,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       });
 
       const currentUser = await account.get<ProfilePrefs>();
-      setUser(mapUserToProfile(currentUser));
+      const storedProfile = await syncStoredProfile(currentUser);
+      setUser(mapUserToProfile(currentUser, storedProfile));
       setStatus("authenticated");
     } catch (error) {
       const message = getErrorMessage(error);
@@ -142,7 +186,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
       await account.createEmailPasswordSession(email, input.password);
       const currentUser = await account.get<ProfilePrefs>();
-      setUser(mapUserToProfile(currentUser));
+      const nextUser = await loadUserProfile(currentUser);
+      setUser(nextUser);
       setStatus("authenticated");
     } catch (error) {
       const message = getErrorMessage(error);
@@ -197,7 +242,8 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       });
 
       const currentUser = await account.get<ProfilePrefs>();
-      setUser(mapUserToProfile(currentUser));
+      const storedProfile = await syncStoredProfile(currentUser);
+      setUser(mapUserToProfile(currentUser, storedProfile));
       setStatus("authenticated");
     } catch (error) {
       const message = getErrorMessage(error);

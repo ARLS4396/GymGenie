@@ -64,6 +64,7 @@ const collectionIds = {
   machineQueueEntries:
     getEnv("EXPO_PUBLIC_APPWRITE_MACHINE_QUEUE_COLLECTION_ID") ||
     "machine_queue_entries",
+  profiles: getEnv("EXPO_PUBLIC_APPWRITE_PROFILES_COLLECTION_ID") || "profiles",
   equipmentItems:
     getEnv("EXPO_PUBLIC_APPWRITE_EQUIPMENT_ITEMS_COLLECTION_ID") ||
     "equipment_items",
@@ -382,6 +383,23 @@ const createEquipmentItemsCollection = async () => {
   });
 };
 
+const createProfilesCollection = async () => {
+  const collectionId = collectionIds.profiles;
+
+  await ensureCollection(collectionId, "Profiles", authenticatedCreatePermissions);
+  await ensureStringAttribute(collectionId, "userId", 255, true);
+  await ensureStringAttribute(collectionId, "fullName", 255, true);
+  await ensureStringAttribute(collectionId, "email", 255, true);
+  await ensureStringAttribute(collectionId, "username", 255, true);
+  await ensureStringAttribute(collectionId, "fitnessGoal", 255, true);
+  await ensureStringAttribute(collectionId, "profileImage", 500, false);
+
+  await retry("profile indexes", async () => {
+    await ensureIndex(collectionId, "profiles_userId", ["userId"], ["ASC"]);
+    await ensureIndex(collectionId, "profiles_email", ["email"], ["ASC"]);
+  });
+};
+
 const createEquipmentCheckoutsCollection = async () => {
   const collectionId = collectionIds.equipmentCheckouts;
 
@@ -425,6 +443,7 @@ const createEquipmentReportsCollection = async () => {
     ["good", "needs attention", "damaged"],
     true,
   );
+  await ensureStringAttribute(collectionId, "maintenanceComment", 500, false);
   await ensureDatetimeAttribute(collectionId, "reportedAt", true);
 
   await retry("equipment report indexes", async () => {
@@ -481,6 +500,7 @@ const main = async () => {
   await ensureResource("database", ensureDatabase);
   await ensureResource("machines collection", createMachinesCollection);
   await ensureResource("machine queue collection", createMachineQueueCollection);
+  await ensureResource("profiles collection", createProfilesCollection);
   await ensureResource("equipment items collection", createEquipmentItemsCollection);
   await ensureResource("equipment checkouts collection", createEquipmentCheckoutsCollection);
   await ensureResource("equipment reports collection", createEquipmentReportsCollection);

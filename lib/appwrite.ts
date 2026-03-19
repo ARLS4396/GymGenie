@@ -10,6 +10,8 @@ const machinesCollectionId =
   process.env.EXPO_PUBLIC_APPWRITE_MACHINES_COLLECTION_ID ?? "";
 const machineQueueCollectionId =
   process.env.EXPO_PUBLIC_APPWRITE_MACHINE_QUEUE_COLLECTION_ID ?? "";
+const profilesCollectionId =
+  process.env.EXPO_PUBLIC_APPWRITE_PROFILES_COLLECTION_ID ?? "profiles";
 const equipmentItemsCollectionId =
   process.env.EXPO_PUBLIC_APPWRITE_EQUIPMENT_ITEMS_COLLECTION_ID ?? "";
 const equipmentCheckoutsCollectionId =
@@ -23,11 +25,40 @@ const isGymBackendReady =
   databaseId.length > 0 &&
   machinesCollectionId.length > 0 &&
   machineQueueCollectionId.length > 0 &&
+  profilesCollectionId.length > 0 &&
   equipmentItemsCollectionId.length > 0 &&
   equipmentCheckoutsCollectionId.length > 0 &&
   equipmentReportsCollectionId.length > 0;
 
 const client = new Client();
+const COOKIE_FALLBACK_STORAGE_KEY = "cookieFallback";
+
+type AppwriteHeaders = Record<string, string>;
+type AppwritePayload = Record<string, unknown>;
+
+const enableWebCookieFallback = (appwriteClient: Client) => {
+  if (Platform.OS !== "web" || typeof window === "undefined" || !window.localStorage) {
+    return;
+  }
+
+  const originalCall = appwriteClient.call.bind(appwriteClient);
+
+  appwriteClient.call = async (
+    method: string,
+    url: URL,
+    headers: AppwriteHeaders = {},
+    params: AppwritePayload = {},
+  ) => {
+    const nextHeaders = { ...headers };
+    const cookieFallback = window.localStorage.getItem(COOKIE_FALLBACK_STORAGE_KEY);
+
+    if (cookieFallback) {
+      nextHeaders["X-Fallback-Cookies"] = cookieFallback;
+    }
+
+    return originalCall(method, url, nextHeaders, params);
+  };
+};
 
 if (isConfigured) {
   client.setEndpoint(endpoint).setProject(projectId);
@@ -36,6 +67,8 @@ if (isConfigured) {
     client.setPlatform(Application.applicationId ?? "com.gymgenie.mobile");
   }
 }
+
+enableWebCookieFallback(client);
 
 export const account = new Account(client);
 export const databases = new Databases(client);
@@ -46,6 +79,7 @@ export const gymBackendIds = {
   collections: {
     machines: machinesCollectionId,
     machineQueueEntries: machineQueueCollectionId,
+    profiles: profilesCollectionId,
     equipmentItems: equipmentItemsCollectionId,
     equipmentCheckouts: equipmentCheckoutsCollectionId,
     equipmentReports: equipmentReportsCollectionId,

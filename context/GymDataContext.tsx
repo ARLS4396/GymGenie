@@ -36,6 +36,7 @@ interface GymDataContextValue {
   reportEquipmentCondition: (
     equipmentId: string,
     condition: EquipmentCondition,
+    maintenanceComment: string,
     userId: string,
   ) => Promise<void>;
 }
@@ -134,9 +135,19 @@ export const GymDataProvider = ({ children }: PropsWithChildren) => {
   );
 
   const reportEquipmentCondition = useCallback(
-    async (equipmentId: string, condition: EquipmentCondition, userId: string) => {
+    async (
+      equipmentId: string,
+      condition: EquipmentCondition,
+      maintenanceComment: string,
+      userId: string,
+    ) => {
       await runMutation(() =>
-        reportEquipmentConditionDocument(equipmentId, condition, userId),
+        reportEquipmentConditionDocument(
+          equipmentId,
+          condition,
+          maintenanceComment,
+          userId,
+        ),
       );
     },
     [runMutation],

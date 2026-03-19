@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/ui/AppButton";
 import { FormField } from "@/components/ui/FormField";
@@ -44,6 +44,16 @@ export default function ProfileScreen() {
     });
   }, [user]);
 
+  const initials = useMemo(() => {
+    const fullName = form.fullName.trim() || user?.fullName || "Gym Genie";
+
+    return fullName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("");
+  }, [form.fullName, user?.fullName]);
+
   const validate = (): boolean => {
     const nextErrors: Partial<Record<keyof ProfileForm, string>> = {};
 
@@ -80,7 +90,7 @@ export default function ProfileScreen() {
         profileImage: form.profileImage,
       });
 
-      setSaveSuccess("Profile saved successfully.");
+      setSaveSuccess("Profile information saved successfully.");
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Unable to save profile.");
     } finally {
@@ -89,17 +99,45 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScreenContainer title="Profile" subtitle="View and edit your account details.">
+    <ScreenContainer
+      title="Profile"
+      subtitle="Review your member information and update the stored profile record."
+    >
       {authError ? <StatusBanner type="warning" message={authError} /> : null}
       {saveError ? <StatusBanner type="error" message={saveError} /> : null}
       {saveSuccess ? <StatusBanner type="success" message={saveSuccess} /> : null}
 
-      <SectionCard>
-        <Text style={styles.label}>Email</Text>
-        <Text style={styles.value}>{user?.email}</Text>
+      <SectionCard style={styles.identityCard}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials || "GG"}</Text>
+        </View>
+        <View style={styles.identityCopy}>
+          <Text style={styles.identityName}>{user?.fullName}</Text>
+          <Text style={styles.identityMeta}>{user?.email}</Text>
+          <Text style={styles.identityMeta}>Workout focus: {user?.fitnessGoal}</Text>
+        </View>
       </SectionCard>
 
       <SectionCard>
+        <Text style={styles.sectionTitle}>Stored Account Details</Text>
+        <View style={styles.infoGrid}>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Email</Text>
+            <Text style={styles.value}>{user?.email}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Username</Text>
+            <Text style={styles.value}>{user?.username}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Goal</Text>
+            <Text style={styles.value}>{user?.fitnessGoal}</Text>
+          </View>
+        </View>
+      </SectionCard>
+
+      <SectionCard>
+        <Text style={styles.sectionTitle}>Edit Profile</Text>
         <View style={styles.form}>
           <FormField
             label="Full Name"
@@ -118,16 +156,18 @@ export default function ProfileScreen() {
             placeholder="gymgoals99"
           />
           <FormField
-            label="Fitness Goal"
+            label="Workout Focus / Goal"
             value={form.fitnessGoal}
             onChangeText={(fitnessGoal) =>
               setForm((current) => ({ ...current, fitnessGoal }))
             }
             error={errors.fitnessGoal}
             placeholder="Build strength and consistency"
+            multiline
+            numberOfLines={2}
           />
           <FormField
-            label="Profile Image URL (optional)"
+            label="Profile Image Placeholder URL (optional)"
             value={form.profileImage}
             onChangeText={(profileImage) =>
               setForm((current) => ({ ...current, profileImage }))
@@ -148,6 +188,49 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  identityCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  avatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.secondary,
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: theme.colors.primary,
+  },
+  identityCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  identityName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+  },
+  identityMeta: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+  },
+  infoGrid: {
+    gap: theme.spacing.sm,
+  },
+  infoRow: {
+    gap: 4,
+  },
   label: {
     fontSize: 13,
     color: theme.colors.textSecondary,

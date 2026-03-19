@@ -55,6 +55,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: "100%",
+    maxWidth: 760,
+    alignSelf: "center",
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
   },

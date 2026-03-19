@@ -37,6 +37,7 @@ EXPO_PUBLIC_APPWRITE_PROJECT_NAME=Gym Genie
 EXPO_PUBLIC_APPWRITE_DATABASE_ID=gym_genie
 EXPO_PUBLIC_APPWRITE_MACHINES_COLLECTION_ID=machines
 EXPO_PUBLIC_APPWRITE_MACHINE_QUEUE_COLLECTION_ID=machine_queue_entries
+EXPO_PUBLIC_APPWRITE_PROFILES_COLLECTION_ID=profiles
 EXPO_PUBLIC_APPWRITE_EQUIPMENT_ITEMS_COLLECTION_ID=equipment_items
 EXPO_PUBLIC_APPWRITE_EQUIPMENT_CHECKOUTS_COLLECTION_ID=equipment_checkouts
 EXPO_PUBLIC_APPWRITE_EQUIPMENT_REPORTS_COLLECTION_ID=equipment_condition_reports
@@ -62,6 +63,7 @@ npm run setup:backend
 This script creates:
 - Database: `gym_genie`
 - Collections: `machines`, `machine_queue_entries`, `equipment_items`, `equipment_checkouts`, `equipment_condition_reports`
+- Collection: `profiles`
 - Required attributes and indexes
 - Seed machine and equipment documents
 

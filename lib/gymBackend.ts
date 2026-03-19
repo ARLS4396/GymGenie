@@ -103,6 +103,7 @@ const mapEquipment = (
       condition: latestReport?.condition ?? item.defaultCondition,
       lastReportedAt: latestReport?.reportedAt,
       lastReportedBy: latestReport?.userId,
+      lastMaintenanceComment: latestReport?.maintenanceComment?.trim() || undefined,
     };
   });
 };
@@ -325,6 +326,7 @@ export const returnEquipment = async (
 export const reportEquipmentCondition = async (
   equipmentId: string,
   condition: EquipmentCondition,
+  maintenanceComment: string,
   userId: string,
 ): Promise<void> => {
   const ids = getBackendIds();
@@ -337,6 +339,7 @@ export const reportEquipmentCondition = async (
       equipmentId,
       userId,
       condition,
+      maintenanceComment: maintenanceComment.trim() || undefined,
       reportedAt: new Date().toISOString(),
     },
     getOwnedPermissions(userId),

@@ -19,6 +19,7 @@ export interface EquipmentItem {
   condition: EquipmentCondition;
   lastReportedAt?: string;
   lastReportedBy?: string;
+  lastMaintenanceComment?: string;
 }
 
 export interface MachineRecord extends Models.Document {
@@ -54,5 +55,6 @@ export interface EquipmentConditionReportRecord extends Models.Document {
   equipmentId: string;
   userId: string;
   condition: EquipmentCondition;
+  maintenanceComment?: string;
   reportedAt: string;
 }

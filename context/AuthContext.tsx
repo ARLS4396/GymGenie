@@ -14,10 +14,6 @@ import {
   ID,
   isAppwriteConfigured,
 } from "@/lib/appwrite";
-import {
-  fetchStoredProfile,
-  upsertStoredProfile,
-} from "@/lib/profileBackend";
 import type {
   AuthContextValue,
   AuthStatus,
@@ -26,7 +22,6 @@ import type {
 } from "@/types/auth";
 import type {
   ProfilePrefs,
-  ProfileRecord,
   ProfileUpdateInput,
   UserProfile,
 } from "@/types/profile";
@@ -36,60 +31,41 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
-const mapUserToProfile = (
-  user: Models.User<ProfilePrefs>,
-  storedProfile?: ProfileRecord | null,
-): UserProfile => {
-  const username = storedProfile?.username?.trim() ?? user.prefs?.username?.trim();
-  const fitnessGoal =
-    storedProfile?.fitnessGoal?.trim() ?? user.prefs?.fitnessGoal?.trim();
-  const profileImage =
-    storedProfile?.profileImage?.trim() ?? user.prefs?.profileImage?.trim();
+const mapUserToProfile = (user: Models.User<ProfilePrefs>): UserProfile => {
+  const username = user.prefs?.username?.trim();
+  const fitnessGoal = user.prefs?.fitnessGoal?.trim();
+  const profileImage = user.prefs?.profileImage?.trim();
+  const membershipTier = user.prefs?.membershipTier?.trim();
+  //health stats
+  const age = user.prefs?.age?.trim();
+  const height = user.prefs?.height?.trim();
+  const weight = user.prefs?.weight?.trim();
+  const targetWeight = user.prefs?.targetWeight?.trim();
+  const activityLevel = user.prefs?.activityLevel?.trim();
+  
 
   return {
     id: user.$id,
-    fullName: storedProfile?.fullName ?? user.name,
-    email: storedProfile?.email ?? user.email,
+    fullName: user.name,
+    email: user.email,
     username: username && username.length > 0 ? username : user.email.split("@")[0],
     fitnessGoal:
       fitnessGoal && fitnessGoal.length > 0 ? fitnessGoal : "General fitness",
     profileImage: profileImage && profileImage.length > 0 ? profileImage : undefined,
+    membershipTier:
+      membershipTier && membershipTier.length > 0 ? membershipTier : undefined,
+    //health stats
+    age: age && age.length > 0 ? age : undefined,
+    height: height && height.length > 0 ? height : undefined,
+    weight: weight && weight.length > 0 ? weight : undefined,
+    targetWeight: targetWeight && targetWeight.length > 0 ? targetWeight : undefined,
+    activityLevel:
+      activityLevel && activityLevel.length > 0 ? activityLevel : undefined,
   };
 };
 
-const hasMissingAccountScope = (error: unknown): boolean =>
-  error instanceof AppwriteException &&
-  error.message.includes("missing scopes") &&
-  error.message.includes('"account"');
-
 const isUnauthorized = (error: unknown): boolean =>
-  error instanceof AppwriteException &&
-  (error.code === 401 || hasMissingAccountScope(error));
-
-const loadUserProfile = async (
-  currentUser: Models.User<ProfilePrefs>,
-): Promise<UserProfile> => {
-  let storedProfile = await fetchStoredProfile(currentUser.$id);
-
-  if (!storedProfile) {
-    storedProfile = await syncStoredProfile(currentUser);
-  }
-
-  return mapUserToProfile(currentUser, storedProfile);
-};
-
-const syncStoredProfile = async (
-  currentUser: Models.User<ProfilePrefs>,
-): Promise<ProfileRecord | null> => {
-  return upsertStoredProfile({
-    userId: currentUser.$id,
-    fullName: currentUser.name,
-    email: currentUser.email,
-    username: currentUser.prefs?.username ?? currentUser.email.split("@")[0],
-    fitnessGoal: currentUser.prefs?.fitnessGoal ?? "General fitness",
-    profileImage: currentUser.prefs?.profileImage,
-  });
-};
+  error instanceof AppwriteException && error.code === 401;
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [status, setStatus] = useState<AuthStatus>("loading");
@@ -109,8 +85,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
     try {
       const currentUser = await account.get<ProfilePrefs>();
-      const nextUser = await loadUserProfile(currentUser);
-      setUser(nextUser);
+      setUser(mapUserToProfile(currentUser));
       setStatus("authenticated");
     } catch (error) {
       if (isUnauthorized(error)) {
@@ -135,8 +110,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
 
     const currentUser = await account.get<ProfilePrefs>();
-    const nextUser = await loadUserProfile(currentUser);
-    setUser(nextUser);
+    setUser(mapUserToProfile(currentUser));
     setStatus("authenticated");
   }, []);
 
@@ -157,11 +131,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       await account.updatePrefs<ProfilePrefs>({
         username: input.username.trim(),
         fitnessGoal: input.fitnessGoal.trim(),
+        membershipTier: "",
+        age: "",
+        height: "",
+        weight: "",
+        targetWeight: "",
+        activityLevel: ""
       });
 
       const currentUser = await account.get<ProfilePrefs>();
-      const storedProfile = await syncStoredProfile(currentUser);
-      setUser(mapUserToProfile(currentUser, storedProfile));
+      setUser(mapUserToProfile(currentUser));
       setStatus("authenticated");
     } catch (error) {
       const message = getErrorMessage(error);
@@ -186,8 +165,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
       await account.createEmailPasswordSession(email, input.password);
       const currentUser = await account.get<ProfilePrefs>();
-      const nextUser = await loadUserProfile(currentUser);
-      setUser(nextUser);
+      setUser(mapUserToProfile(currentUser));
       setStatus("authenticated");
     } catch (error) {
       const message = getErrorMessage(error);
@@ -239,11 +217,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
           nextProfileImage && nextProfileImage.length > 0
             ? nextProfileImage
             : undefined,
+        membershipTier: input.membershipTier?.trim() || "",
+        age: input.age?.trim() || "",
+        height: input.height?.trim() || "",
+        weight: input.weight?.trim() || "",
+        targetWeight: input.targetWeight?.trim() || "",
+        activityLevel: input.activityLevel?.trim() || "",
       });
 
       const currentUser = await account.get<ProfilePrefs>();
-      const storedProfile = await syncStoredProfile(currentUser);
-      setUser(mapUserToProfile(currentUser, storedProfile));
+      setUser(mapUserToProfile(currentUser));
       setStatus("authenticated");
     } catch (error) {
       const message = getErrorMessage(error);
@@ -291,3 +274,4 @@ export const useAuth = (): AuthContextValue => {
 
   return context;
 };
+

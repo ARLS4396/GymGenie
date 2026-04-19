@@ -5,9 +5,12 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
   type ViewStyle,
 } from "react-native";
 import { theme } from "@/styles/theme";
+
+const logo = require("@/assets/images/logo.png");
 
 interface ScreenContainerProps {
   title: string;
@@ -30,7 +33,12 @@ export const ScreenContainer = ({
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
+
       <View style={styles.children}>{children}</View>
+
+      <View style={styles.logoContainer}>
+        <Image source={logo} style={styles.logo} resizeMode="contain" />
+      </View>
     </View>
   );
 
@@ -55,9 +63,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    width: "100%",
-    maxWidth: 760,
-    alignSelf: "center",
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
   },
@@ -75,5 +80,14 @@ const styles = StyleSheet.create({
   },
   children: {
     gap: theme.spacing.md,
+  },
+  logoContainer: {
+    marginTop: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logo: {
+    width: 560,
+    height: 320,
   },
 });

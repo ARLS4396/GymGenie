@@ -1,6 +1,6 @@
 import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, Image } from "react-native";
 import { AppButton } from "@/components/ui/AppButton";
 import { FormField } from "@/components/ui/FormField";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -10,6 +10,8 @@ import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/styles/theme";
 import { isNonEmpty, isValidEmail } from "@/utils/validation";
 
+const logo = require("@/assets/images/logo.png");
+
 interface LoginForm {
   email: string;
   password: string;
@@ -18,7 +20,12 @@ interface LoginForm {
 export default function LoginScreen() {
   const router = useRouter();
   const { status, login, authError, clearAuthError } = useAuth();
-  const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
+
+  const [form, setForm] = useState<LoginForm>({
+    email: "",
+    password: "",
+  });
+
   const [errors, setErrors] = useState<Partial<Record<keyof LoginForm, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,14 +58,17 @@ export default function LoginScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-      await login({ email: form.email, password: form.password });
+
+      await login({
+        email: form.email,
+        password: form.password,
+      });
+
       router.replace("./home");
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to log in.");
@@ -70,8 +80,14 @@ export default function LoginScreen() {
   return (
     <ScreenContainer
       title="Log In"
-      subtitle="Access your gym dashboard, machine queues, and equipment tools."
+      subtitle="Access your Gym Genie dashboard, queues, and tools."
     >
+      {/* LOGO */}
+      <View style={styles.logoContainer}>
+        <Image source={logo} style={styles.logo} resizeMode="contain" />
+        <Text style={styles.brandText}>Gym Genie</Text>
+      </View>
+
       {authError ? <StatusBanner type="warning" message={authError} /> : null}
       {submitError ? <StatusBanner type="error" message={submitError} /> : null}
 
@@ -79,17 +95,18 @@ export default function LoginScreen() {
         <FormField
           label="Email"
           value={form.email}
-          onChangeText={(email) => setForm((current) => ({ ...current, email }))}
+          onChangeText={(email) => setForm((c) => ({ ...c, email }))}
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
           error={errors.email}
         />
+
         <FormField
           label="Password"
           value={form.password}
-          onChangeText={(password) => setForm((current) => ({ ...current, password }))}
+          onChangeText={(password) => setForm((c) => ({ ...c, password }))}
           placeholder="********"
           secureTextEntry
           autoCapitalize="none"
@@ -115,9 +132,22 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: theme.spacing.md,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
+  brandText: {
+    marginTop: 6,
+    fontSize: 22,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+  },
   form: {
     gap: theme.spacing.sm,
-    justifyContent: "center",
   },
   footer: {
     flexDirection: "row",
@@ -134,4 +164,3 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
-

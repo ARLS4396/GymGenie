@@ -59,25 +59,11 @@ export default function SignUpScreen() {
   const validate = (): boolean => {
     const nextErrors: Partial<Record<keyof SignUpForm, string>> = {};
 
-    if (!isNonEmpty(form.fullName)) {
-      nextErrors.fullName = "Full name is required.";
-    }
-
-    if (!isValidEmail(form.email)) {
-      nextErrors.email = "Enter a valid email address.";
-    }
-
-    if (!isNonEmpty(form.username)) {
-      nextErrors.username = "Username is required.";
-    }
-
-    if (!isNonEmpty(form.fitnessGoal)) {
-      nextErrors.fitnessGoal = "Fitness goal is required.";
-    }
-
-    if (!isValidPassword(form.password)) {
-      nextErrors.password = "Password must be at least 8 characters.";
-    }
+    if (!isNonEmpty(form.fullName)) nextErrors.fullName = "Full name is required.";
+    if (!isValidEmail(form.email)) nextErrors.email = "Enter a valid email address.";
+    if (!isNonEmpty(form.username)) nextErrors.username = "Username is required.";
+    if (!isNonEmpty(form.fitnessGoal)) nextErrors.fitnessGoal = "Select a fitness goal.";
+    if (!isValidPassword(form.password)) nextErrors.password = "Password must be at least 8 characters.";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -93,9 +79,7 @@ export default function SignUpScreen() {
       await signUp(form);
       router.replace("./home");
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "Unable to create account."
-      );
+      setSubmitError(error instanceof Error ? error.message : "Unable to create account.");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,7 +88,7 @@ export default function SignUpScreen() {
   return (
     <ScreenContainer
       title="Create Account"
-      subtitle="Set up your gym profile to unlock queues and equipment checkouts."
+      subtitle="Set up your Gym Genie profile."
     >
       {authError ? <StatusBanner type="warning" message={authError} /> : null}
       {submitError ? <StatusBanner type="error" message={submitError} /> : null}
@@ -113,9 +97,7 @@ export default function SignUpScreen() {
         <FormField
           label="Full Name"
           value={form.fullName}
-          onChangeText={(fullName) =>
-            setForm((c) => ({ ...c, fullName }))
-          }
+          onChangeText={(fullName) => setForm((c) => ({ ...c, fullName }))}
           placeholder="Jane Doe"
           autoCapitalize="words"
           error={errors.fullName}
@@ -124,9 +106,7 @@ export default function SignUpScreen() {
         <FormField
           label="Email"
           value={form.email}
-          onChangeText={(email) =>
-            setForm((c) => ({ ...c, email }))
-          }
+          onChangeText={(email) => setForm((c) => ({ ...c, email }))}
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -136,9 +116,7 @@ export default function SignUpScreen() {
         <FormField
           label="Username"
           value={form.username}
-          onChangeText={(username) =>
-            setForm((c) => ({ ...c, username }))
-          }
+          onChangeText={(username) => setForm((c) => ({ ...c, username }))}
           placeholder="gymgoals99"
           autoCapitalize="none"
           error={errors.username}
@@ -166,17 +144,15 @@ export default function SignUpScreen() {
             </Picker>
           </View>
 
-          {errors.fitnessGoal ? (
+          {errors.fitnessGoal && (
             <Text style={styles.errorText}>{errors.fitnessGoal}</Text>
-          ) : null}
+          )}
         </View>
 
         <FormField
           label="Password"
           value={form.password}
-          onChangeText={(password) =>
-            setForm((c) => ({ ...c, password }))
-          }
+          onChangeText={(password) => setForm((c) => ({ ...c, password }))}
           placeholder="At least 8 characters"
           secureTextEntry
           autoCapitalize="none"

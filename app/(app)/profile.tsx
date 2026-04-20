@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View, Image, Pressable } from "react-native";
-import { useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { AppButton } from "@/components/ui/AppButton";
 import { FormField } from "@/components/ui/FormField";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
@@ -10,120 +10,84 @@ import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/styles/theme";
 import { isNonEmpty } from "@/utils/validation";
 
-type ProfileImageKey =
-  | "profile1"
-  | "profile2"
-  | "profile3"
+type FitnessGoal =
+  | "lose_weight"
+  | "build_muscle"
+  | "maintain"
+  | "endurance"
+  | "general_health"
+  | "";
+
+type ActivityLevel =
+  | "sedentary"
+  | "light"
+  | "moderate"
+  | "very_active"
+  | "athlete"
+  | "";
 
 interface ProfileForm {
   fullName: string;
   username: string;
-  fitnessGoal: string;
+  fitnessGoal: FitnessGoal;
+  activityLevel: ActivityLevel;
   profileImage: string;
-  age: string;
-  height: string;
-  weight: string;
-  targetWeight: string;
-  activityLevel: string;
 }
 
-const profileImageOptions: { key: ProfileImageKey; source: any }[] = [
-  {
-    key: "profile1",
-    source: require("@/assets/profile-options/profile1.png"),
-  },
-  {
-    key: "profile2",
-    source: require("@/assets/profile-options/profile2.png"),
-  },
-  {
-    key: "profile3",
-    source: require("@/assets/profile-options/profile3.png"),
-  },
-];
-
 export default function ProfileScreen() {
-  const router = useRouter();
   const { user, updateProfile, authError } = useAuth();
 
   const [form, setForm] = useState<ProfileForm>({
     fullName: "",
     username: "",
     fitnessGoal: "",
-    profileImage: "",
-    age: "",
-    height: "",
-    weight: "",
-    targetWeight: "",
     activityLevel: "",
+    profileImage: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ProfileForm, string>>
+  >({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     setForm({
       fullName: user.fullName,
       username: user.username,
-      fitnessGoal: user.fitnessGoal,
+      fitnessGoal: user.fitnessGoal as FitnessGoal,
+      activityLevel: user.activityLevel as ActivityLevel,
       profileImage: user.profileImage ?? "",
-      age: user.age ?? "",
-      height: user.height ?? "",
-      weight: user.weight ?? "",
-      targetWeight: user.targetWeight ?? "",
-      activityLevel: user.activityLevel ?? "",
     });
   }, [user]);
+
+  const initials = useMemo(() => {
+    const fullName = form.fullName.trim() || user?.fullName || "GG";
+
+    return fullName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("");
+  }, [form.fullName, user?.fullName]);
 
   const validate = (): boolean => {
     const nextErrors: Partial<Record<keyof ProfileForm, string>> = {};
 
-    if (!isNonEmpty(form.fullName)) {
-      nextErrors.fullName = "Full name is required.";
-    }
-
-    if (!isNonEmpty(form.username)) {
-      nextErrors.username = "Username is required.";
-    }
-
-    if (!isNonEmpty(form.fitnessGoal)) {
-      nextErrors.fitnessGoal = "Fitness goal is required.";
-    }
-
-    if (!isNonEmpty(form.age)) {
-      nextErrors.age = "Age is required.";
-    }
-
-    if (!isNonEmpty(form.height)) {
-      nextErrors.height = "Height is required.";
-    }
-
-    if (!isNonEmpty(form.weight)) {
-      nextErrors.weight = "Weight is required.";
-    }
-
-    if (!isNonEmpty(form.targetWeight)) {
-      nextErrors.targetWeight = "Target weight is required.";
-    }
-
-    if (!isNonEmpty(form.activityLevel)) {
-      nextErrors.activityLevel = "Activity level is required.";
-    }
+    if (!isNonEmpty(form.fullName)) nextErrors.fullName = "Full name is required.";
+    if (!isNonEmpty(form.username)) nextErrors.username = "Username is required.";
+    if (!form.fitnessGoal) nextErrors.fitnessGoal = "Fitness goal is required.";
+    if (!form.activityLevel) nextErrors.activityLevel = "Activity level is required.";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
   const handleSave = async () => {
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setIsSaving(true);
@@ -134,86 +98,78 @@ export default function ProfileScreen() {
         fullName: form.fullName,
         username: form.username,
         fitnessGoal: form.fitnessGoal,
-        profileImage: form.profileImage,
-        age: form.age,
-        height: form.height,
-        weight: form.weight,
-        targetWeight: form.targetWeight,
         activityLevel: form.activityLevel,
-        membershipTier: user?.membershipTier,
+        profileImage: form.profileImage,
       });
 
-      setSaveSuccess("Profile saved successfully.");
+      setSaveSuccess("Profile information saved successfully.");
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : "Unable to save profile.");
+      setSaveError(
+        error instanceof Error ? error.message : "Unable to save profile."
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
-  const selectedProfileImage = profileImageOptions.find(
-    (option) => option.key === form.profileImage,
-  );
-
   return (
-    <ScreenContainer title="Profile" subtitle="View and edit your account details.">
-      {authError ? <StatusBanner type="warning" message={authError} /> : null}
-      {saveError ? <StatusBanner type="error" message={saveError} /> : null}
-      {saveSuccess ? <StatusBanner type="success" message={saveSuccess} /> : null}
+    <ScreenContainer
+      title="Profile"
+      subtitle="Review your member information and update your fitness preferences."
+    >
+      {authError && <StatusBanner type="warning" message={authError} />}
+      {saveError && <StatusBanner type="error" message={saveError} />}
+      {saveSuccess && <StatusBanner type="success" message={saveSuccess} />}
+
+      <SectionCard style={styles.identityCard}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials || "GG"}</Text>
+        </View>
+
+        <View style={styles.identityCopy}>
+          <Text style={styles.identityName}>{user?.fullName}</Text>
+          <Text style={styles.identityMeta}>{user?.email}</Text>
+          <Text style={styles.identityMeta}>Goal: {user?.fitnessGoal}</Text>
+          <Text style={styles.identityMeta}>Activity: {user?.activityLevel}</Text>
+        </View>
+      </SectionCard>
 
       <SectionCard>
-        <View style={styles.headerRow}>
-          <View style={styles.emailTextContainer}>
+        <Text style={styles.sectionTitle}>Stored Account Details</Text>
+
+        <View style={styles.infoGrid}>
+          <View style={styles.infoRow}>
             <Text style={styles.label}>Email</Text>
             <Text style={styles.value}>{user?.email}</Text>
-
-            <Text style={[styles.label, styles.membershipLabel, {marginTop: theme.spacing.lg}]}>Membership Tier</Text>
-            <Text style={[styles.value, {fontWeight: 'bold'}]}>
-              {user?.membershipTier ?? "No membership selected"}
-            </Text>
           </View>
 
-          <View style={styles.profileArea}>
-            {selectedProfileImage ? (
-              <Image
-                source={selectedProfileImage.source}
-                style={styles.profileImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>No Image</Text>
-              </View>
-            )}
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Username</Text>
+            <Text style={styles.value}>{user?.username}</Text>
+          </View>
 
-            <Text style={styles.choosePictureLabel}>Choose a Profile Picture</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Goal</Text>
+            <Text style={styles.value}>{user?.fitnessGoal}</Text>
+          </View>
 
-            <View style={styles.imageOptionsRow}>
-              {profileImageOptions.map((option) => (
-                <Pressable
-                  key={option.key}
-                  onPress={() =>
-                    setForm((current) => ({ ...current, profileImage: option.key }))
-                  }
-                  style={[
-                    styles.imageOptionWrapper,
-                    form.profileImage === option.key ? styles.imageOptionSelected : null,
-                  ]}
-                >
-                  <Image source={option.source} style={styles.imageOption} />
-                </Pressable>
-              ))}
-            </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Activity Level</Text>
+            <Text style={styles.value}>{user?.activityLevel}</Text>
           </View>
         </View>
       </SectionCard>
 
       <SectionCard>
+        <Text style={styles.sectionTitle}>Edit Profile</Text>
+
         <View style={styles.form}>
           <FormField
             label="Full Name"
             value={form.fullName}
-            onChangeText={(fullName) => setForm((current) => ({ ...current, fullName }))}
+            onChangeText={(fullName) =>
+              setForm((c) => ({ ...c, fullName }))
+            }
             error={errors.fullName}
             placeholder="Jane Doe"
           />
@@ -221,167 +177,127 @@ export default function ProfileScreen() {
           <FormField
             label="Username"
             value={form.username}
-            onChangeText={(username) => setForm((current) => ({ ...current, username }))}
+            onChangeText={(username) =>
+              setForm((c) => ({ ...c, username }))
+            }
             error={errors.username}
             autoCapitalize="none"
-            autoComplete="username"
             placeholder="gymgoals99"
           />
 
+          <Text style={styles.label}>Fitness Goal</Text>
+          <View style={styles.dropdown}>
+            <Picker
+              selectedValue={form.fitnessGoal}
+              onValueChange={(value: FitnessGoal) =>
+                setForm((c) => ({ ...c, fitnessGoal: value }))
+              }
+            >
+              <Picker.Item label="Select a goal..." value="" />
+              <Picker.Item label="Lose weight" value="lose_weight" />
+              <Picker.Item label="Build muscle" value="build_muscle" />
+              <Picker.Item label="Maintain fitness" value="maintain" />
+              <Picker.Item label="Improve endurance" value="endurance" />
+              <Picker.Item label="General health" value="general_health" />
+            </Picker>
+          </View>
+
+          <Text style={styles.label}>Activity Level</Text>
+          <View style={styles.dropdown}>
+            <Picker
+              selectedValue={form.activityLevel}
+              onValueChange={(value: ActivityLevel) =>
+                setForm((c) => ({ ...c, activityLevel: value }))
+              }
+            >
+              <Picker.Item label="Select activity level..." value="" />
+              <Picker.Item label="Sedentary" value="sedentary" />
+              <Picker.Item label="Lightly active" value="light" />
+              <Picker.Item label="Moderately active" value="moderate" />
+              <Picker.Item label="Very active" value="very_active" />
+              <Picker.Item label="Athlete" value="athlete" />
+            </Picker>
+          </View>
+
           <FormField
-            label="Fitness Goal"
-            value={form.fitnessGoal}
-            onChangeText={(fitnessGoal) =>
-              setForm((current) => ({ ...current, fitnessGoal }))
+            label="Profile Image URL (optional)"
+            value={form.profileImage}
+            onChangeText={(profileImage) =>
+              setForm((c) => ({ ...c, profileImage }))
             }
-            error={errors.fitnessGoal}
-            placeholder="Build strength and consistency"
-          />
-
-          <FormField
-            label="Age"
-            value={form.age}
-            onChangeText={(age) => setForm((current) => ({ ...current, age }))}
-            error={errors.age}
-            placeholder="30"
-            keyboardType="numeric"
-          />
-
-          <FormField
-            label="Height"
-            value={form.height}
-            onChangeText={(height) => setForm((current) => ({ ...current, height }))}
-            error={errors.height}
-            placeholder={`5'10"`}
-          />
-
-          <FormField
-            label="Weight"
-            value={form.weight}
-            onChangeText={(weight) => setForm((current) => ({ ...current, weight }))}
-            error={errors.weight}
-            placeholder="170"
-            keyboardType="numeric"
-          />
-
-          <FormField
-            label="Target Weight"
-            value={form.targetWeight}
-            onChangeText={(targetWeight) =>
-              setForm((current) => ({ ...current, targetWeight }))
-            }
-            error={errors.targetWeight}
-            placeholder="160"
-            keyboardType="numeric"
-          />
-
-          <FormField
-            label="Activity Level"
-            value={form.activityLevel}
-            onChangeText={(activityLevel) =>
-              setForm((current) => ({ ...current, activityLevel }))
-            }
-            error={errors.activityLevel}
-            placeholder="Moderately active"
+            autoCapitalize="none"
+            placeholder="https://example.com/avatar.jpg"
           />
         </View>
       </SectionCard>
 
-      <View style={styles.buttonGroup}>
-        <AppButton
-          label={isSaving ? "Saving..." : "Save Profile"}
-          loading={isSaving}
-          onPress={handleSave}
-        />
-        <AppButton
-          label="View Membership Plans"
-          variant="secondary"
-          onPress={() => router.push("./membership")}
-        />
-      </View>
+      <AppButton
+        label={isSaving ? "Saving..." : "Save Profile"}
+        loading={isSaving}
+        onPress={handleSave}
+      />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  identityCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  avatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.secondary,
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: theme.colors.primary,
+  },
+  identityCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  identityName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+  },
+  identityMeta: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  infoGrid: {
+    gap: theme.spacing.sm,
+  },
+  infoRow: {
+    gap: 4,
+  },
   label: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
     fontWeight: "600",
+    marginTop: 10,
   },
   value: {
     fontSize: 15,
-    color: theme.colors.textPrimary,
-  },
-  membershipLabel: {
-    marginTop: theme.spacing.sm,
   },
   form: {
-    gap: theme.spacing.sm,
-  },
-  buttonGroup: {
-    gap: theme.spacing.sm,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
     gap: theme.spacing.md,
   },
-  emailTextContainer: {
-    flex: 1,
-  },
-  profileArea: {
-    alignItems: "center",
-    maxWidth: 180,
-  },
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#D9D9D9",
-    marginBottom: theme.spacing.xs,
-  },
-  imagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#D9D9D9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: theme.spacing.xs,
-  },
-  imagePlaceholderText: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    textAlign: "center",
-  },
-  choosePictureLabel: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    fontWeight: "600",
-    marginBottom: theme.spacing.xs,
-    textAlign: "center",
-  },
-  imageOptionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: theme.spacing.xs,
-  },
-  imageOptionWrapper: {
-    borderWidth: 2,
-    borderColor: "transparent",
-    borderRadius: 22,
-    padding: 2,
-  },
-  imageOptionSelected: {
-    borderColor: theme.colors.primary,
-  },
-  imageOption: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    backgroundColor: "#D9D9D9",
+  dropdown: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    marginTop: 6,
+    overflow: "hidden",
   },
 });

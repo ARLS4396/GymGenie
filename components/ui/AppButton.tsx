@@ -3,10 +3,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  type ViewStyle,
 } from "react-native";
 import { theme } from "@/styles/theme";
-
+import { StyleProp, ViewStyle } from "react-native";
 type ButtonVariant = "primary" | "secondary" | "danger";
 
 interface AppButtonProps {
@@ -15,7 +14,7 @@ interface AppButtonProps {
   variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 const variantStyles: Record<

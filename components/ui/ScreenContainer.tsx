@@ -5,12 +5,9 @@ import {
   StyleSheet,
   Text,
   View,
-  Image,
   type ViewStyle,
 } from "react-native";
 import { theme } from "@/styles/theme";
-
-const logo = require("@/assets/images/logo.png");
 
 interface ScreenContainerProps {
   title: string;
@@ -29,23 +26,27 @@ export const ScreenContainer = ({
 }: ScreenContainerProps) => {
   const content = (
     <View style={[styles.content, contentStyle]}>
+      {/* GLOBAL BRAND HEADER */}
+      <View style={styles.brandHeader}>
+        <Text style={styles.brandText}>Gym Genie</Text>
+      </View>
+
+      {/* PAGE TITLE */}
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
 
       <View style={styles.children}>{children}</View>
-
-      <View style={styles.logoContainer}>
-        <Image source={logo} style={styles.logo} resizeMode="contain" />
-      </View>
     </View>
   );
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       {scroll ? (
-        <ScrollView contentContainerStyle={styles.scrollContent}>{content}</ScrollView>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {content}
+        </ScrollView>
       ) : (
         content
       )}
@@ -66,6 +67,19 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
   },
+
+  /* 🔥 NEW BRAND HEADER */
+  brandHeader: {
+    alignItems: "center",
+    marginBottom: theme.spacing.sm,
+  },
+  brandText: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: theme.colors.primary,
+    letterSpacing: 1,
+  },
+
   header: {
     gap: theme.spacing.xs,
   },
@@ -80,14 +94,5 @@ const styles = StyleSheet.create({
   },
   children: {
     gap: theme.spacing.md,
-  },
-  logoContainer: {
-    marginTop: 4,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logo: {
-    width: 560,
-    height: 320,
   },
 });

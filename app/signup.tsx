@@ -1,6 +1,8 @@
 import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+
 import { AppButton } from "@/components/ui/AppButton";
 import { FormField } from "@/components/ui/FormField";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -17,6 +19,14 @@ interface SignUpForm {
   fitnessGoal: string;
   password: string;
 }
+
+const FITNESS_GOALS = [
+  { label: "Lose weight", value: "lose_weight" },
+  { label: "Build muscle", value: "build_muscle" },
+  { label: "Maintain fitness", value: "maintain" },
+  { label: "Improve endurance", value: "endurance" },
+  { label: "General health", value: "general_health" },
+];
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -74,17 +84,18 @@ export default function SignUpScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setIsSubmitting(true);
       setSubmitError(null);
+
       await signUp(form);
       router.replace("./home");
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Unable to create account.");
+      setSubmitError(
+        error instanceof Error ? error.message : "Unable to create account."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -102,49 +113,73 @@ export default function SignUpScreen() {
         <FormField
           label="Full Name"
           value={form.fullName}
-          onChangeText={(fullName) => setForm((current) => ({ ...current, fullName }))}
+          onChangeText={(fullName) =>
+            setForm((c) => ({ ...c, fullName }))
+          }
           placeholder="Jane Doe"
           autoCapitalize="words"
-          autoComplete="name"
           error={errors.fullName}
         />
+
         <FormField
           label="Email"
           value={form.email}
-          onChangeText={(email) => setForm((current) => ({ ...current, email }))}
+          onChangeText={(email) =>
+            setForm((c) => ({ ...c, email }))
+          }
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
-          autoComplete="email"
           error={errors.email}
         />
+
         <FormField
           label="Username"
           value={form.username}
-          onChangeText={(username) => setForm((current) => ({ ...current, username }))}
+          onChangeText={(username) =>
+            setForm((c) => ({ ...c, username }))
+          }
           placeholder="gymgoals99"
           autoCapitalize="none"
-          autoComplete="username"
           error={errors.username}
         />
-        <FormField
-          label="Fitness Goal"
-          value={form.fitnessGoal}
-          onChangeText={(fitnessGoal) =>
-            setForm((current) => ({ ...current, fitnessGoal }))
-          }
-          placeholder="Build strength and consistency"
-          autoCapitalize="sentences"
-          error={errors.fitnessGoal}
-        />
+
+        {/* FITNESS GOAL DROPDOWN */}
+        <View>
+          <Text style={styles.label}>Fitness Goal</Text>
+
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={form.fitnessGoal}
+              onValueChange={(value: string) =>
+                setForm((c) => ({ ...c, fitnessGoal: value }))
+              }
+            >
+              <Picker.Item label="Select a goal..." value="" />
+              {FITNESS_GOALS.map((goal) => (
+                <Picker.Item
+                  key={goal.value}
+                  label={goal.label}
+                  value={goal.value}
+                />
+              ))}
+            </Picker>
+          </View>
+
+          {errors.fitnessGoal ? (
+            <Text style={styles.errorText}>{errors.fitnessGoal}</Text>
+          ) : null}
+        </View>
+
         <FormField
           label="Password"
           value={form.password}
-          onChangeText={(password) => setForm((current) => ({ ...current, password }))}
+          onChangeText={(password) =>
+            setForm((c) => ({ ...c, password }))
+          }
           placeholder="At least 8 characters"
           secureTextEntry
           autoCapitalize="none"
-          autoComplete="new-password"
           error={errors.password}
         />
       </View>
@@ -183,5 +218,22 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: "700",
   },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: 6,
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    overflow: "hidden",
+    backgroundColor: theme.colors.background,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 4,
+  },
 });
-

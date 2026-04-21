@@ -1,11 +1,30 @@
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
-import { AppButton } from "@/components/ui/AppButton";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/styles/theme";
 
+const quickActions = [
+  { emoji: "👤", label: "Profile", path: "./profile" },
+  { emoji: "⏱", label: "Queue", path: "./queue" },
+  { emoji: "🏋️", label: "Equipment", path: "./equipment" },
+  { emoji: "💳", label: "Membership", path: "./membership" },
+] as const;
+
+const regularHours = [
+  { day: "Monday – Friday", hours: "5:00 AM – 11:00 PM" },
+  { day: "Saturday – Sunday", hours: "7:00 AM – 9:00 PM" },
+];
+
+const holidayHours = [
+  { day: "Memorial Day", hours: "8:00 AM – 3:00 PM" },
+  { day: "4th of July", hours: "8:00 AM – 3:00 PM" },
+  { day: "Thanksgiving", hours: "Closed" },
+  { day: "Christmas Eve", hours: "Closes at 4:00 PM" },
+  { day: "Christmas Day", hours: "Closed" },
+  { day: "New Year's Eve", hours: "Closes at 4:00 PM" },
+];
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -14,95 +33,141 @@ export default function HomeScreen() {
   return (
     <ScreenContainer
       title="Dashboard"
-      subtitle="Your workout operations hub for profile, queues, and equipment checkout."
+      subtitle="Your workout operations hub."
     >
+      {/* Welcome card */}
       <SectionCard>
-        <Text style={styles.sectionTitle}>Welcome back, {user?.fullName ?? "Athlete"}</Text>
-        <Text style={styles.sectionBody}>
-          Track your gym flow with fast queue actions, 
-          equipment checkouts, and gym updates.
+        <Text style={styles.welcomeName}>
+          Welcome back, {user?.fullName?.split(" ")[0] ?? "Athlete"} 👋
+        </Text>
+        <Text style={styles.welcomeBody}>
+          Track your gym flow with fast queue actions, equipment checkouts, and live gym updates.
         </Text>
       </SectionCard>
 
-      <SectionCard>
-        <Text style={styles.sectionTitle}>Gym Hours</Text>
-
-        <Text style={[styles.hoursBody,
-          {marginTop: theme.spacing.sm}, 
-          { fontWeight: 'bold'}]}>Regular Hours</Text>
-        <Text style={styles.hoursBody}>Monday - Friday: 5:00 AM - 11:00 PM</Text>
-        <Text style={styles.hoursBody}>Saturday - Sunday: 7:00 AM - 9:00 PM</Text>
-
-        <Text style={[
-          styles.hoursBody, 
-          {marginTop: theme.spacing.sm}, 
-          { fontWeight: 'bold'}]}>Holiday Hours</Text>
-        <Text style={styles.hoursBody}>Memorial Day: 8:00 AM - 3:00 PM</Text>
-        <Text style={styles.hoursBody}>4th of July: 8:00 AM - 3:00 PM</Text>
-        <Text style={styles.hoursBody}>Thanksgiving: Closed</Text>
-        <Text style={styles.hoursBody}>Christmas Eve: Closes at 4:00 PM</Text>
-        <Text style={styles.hoursBody}>Christmas: Closed</Text>
-        <Text style={styles.hoursBody}>New Years Eve: Closes at 4:00 PM</Text>
-
-
-      </SectionCard>
-
+      {/* Quick Actions */}
       <SectionCard>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActions}>
-          <AppButton
-            label="Open Profile"
-            variant="secondary"
-            onPress={() => router.push("./profile")}
-          />
-          <AppButton
-            label="Open Queue"
-            variant="secondary"
-            onPress={() => router.push("./queue")}
-          />
-          <AppButton
-            label="Open Equipment"
-            variant="secondary"
-            onPress={() => router.push("./equipment")}
-          />
+        <View style={styles.actionGrid}>
+          {quickActions.map((action) => (
+            <Pressable
+              key={action.label}
+              style={({ pressed }) => [
+                styles.actionCard,
+                pressed && styles.actionCardPressed,
+              ]}
+              onPress={() => router.push(action.path)}
+            >
+              <Text style={styles.actionEmoji}>{action.emoji}</Text>
+              <Text style={styles.actionLabel}>{action.label}</Text>
+            </Pressable>
+          ))}
         </View>
       </SectionCard>
 
-      <AppButton
-      label="View Membership Plans"
-      variant="secondary"
-      onPress={() => router.push("./membership")}
-      />
-
+      {/* Gym Hours */}
       <SectionCard>
-        <Text style={styles.sectionTitle}>Sprint 1 Ready</Text>
-        <Text style={styles.sectionBody}>
-          Authentication, profile management, route protection, and Appwrite-backed
-          queue and equipment flows are now available.
-        </Text>
+        <Text style={styles.sectionTitle}>Gym Hours</Text>
+
+        <Text style={styles.hoursGroup}>Regular Hours</Text>
+        {regularHours.map(({ day, hours }) => (
+          <View key={day} style={styles.hoursRow}>
+            <Text style={styles.hoursDay}>{day}</Text>
+            <Text style={styles.hoursTime}>{hours}</Text>
+          </View>
+        ))}
+
+        <View style={styles.divider} />
+
+        <Text style={styles.hoursGroup}>Holiday Hours</Text>
+        {holidayHours.map(({ day, hours }) => (
+          <View key={day} style={styles.hoursRow}>
+            <Text style={styles.hoursDay}>{day}</Text>
+            <Text style={[styles.hoursTime, hours === "Closed" && styles.hoursClosed]}>
+              {hours}
+            </Text>
+          </View>
+        ))}
       </SectionCard>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    color: theme.colors.textPrimary,
+  welcomeName: {
     fontSize: 18,
     fontWeight: "700",
+    color: theme.colors.textPrimary,
   },
-  sectionBody: {
-    color: theme.colors.textSecondary,
+  welcomeBody: {
     fontSize: 14,
+    color: theme.colors.textSecondary,
     lineHeight: 20,
   },
-  hoursBody: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center'
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
   },
-  quickActions: {
+  actionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.sm,
+  },
+  actionCard: {
+    flex: 1,
+    minWidth: "44%",
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    alignItems: "center",
+    gap: 6,
+  },
+  actionCardPressed: {
+    backgroundColor: theme.colors.secondary,
+  },
+  actionEmoji: {
+    fontSize: 28,
+  },
+  actionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+  },
+  hoursGroup: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: theme.colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: theme.spacing.xs,
+  },
+  hoursRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 3,
+  },
+  hoursDay: {
+    fontSize: 14,
+    color: theme.colors.textPrimary,
+    flex: 1,
+  },
+  hoursTime: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: "500",
+  },
+  hoursClosed: {
+    color: theme.colors.danger,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: theme.spacing.xs,
   },
 });

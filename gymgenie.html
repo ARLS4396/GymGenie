@@ -547,14 +547,20 @@
             </h2>
             <p class="text-xl md:text-2xl text-[#486581] font-light max-w-2xl mx-auto">Join the elite few who
                 value time as much as strength. The waitlist is now open for our exclusive beta launch.</p>
-            <div class="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
-                <input
+            <form id="waitlist-form" novalidate class="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
+                <input id="waitlist-email"
                     class="flex-grow bg-white border border-[#D9E2EC] rounded-lg px-6 py-4 text-sm font-bold tracking-widest text-[#102A43] placeholder-[#486581] focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none"
-                    placeholder="ENTER YOUR EMAIL" type="email" />
-                <button
+                    placeholder="ENTER YOUR EMAIL" type="email" autocomplete="email" />
+                <button type="submit"
                     class="bg-gradient-gold text-on-primary px-8 py-4 font-bold rounded-lg uppercase tracking-widest text-sm hover:scale-95 transition-transform ambient-gold-glow">Secure
                     Spot</button>
+            </form>
+            <div id="waitlist-success" style="display:none" class="space-y-4 py-4">
+                <div class="text-5xl text-primary">✓</div>
+                <p class="text-xl font-bold text-[#102A43]">You're on the list!</p>
+                <p class="text-[#486581]">We'll reach out when the beta launches.</p>
             </div>
+            <p id="waitlist-error" style="display:none" class="text-sm text-[#C81E4A] font-semibold"></p>
             <p class="text-[10px] text-[#486581]/50 uppercase tracking-[0.3em]">Limited to 500 initial memberships per
                 facility</p>
         </div>
@@ -577,6 +583,67 @@
             </div>
         </div>
     </footer>
+    <script>
+        document.getElementById('waitlist-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('waitlist-email').value.trim();
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showWaitlistError('Please enter a valid email address.');
+                return;
+            }
+
+            if (localStorage.getItem('gg_waitlist')) {
+                showWaitlistSuccess();
+                return;
+            }
+
+            const btn = e.target.querySelector('[type=submit]');
+            btn.textContent = 'Securing...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(
+                    'https://nyc.cloud.appwrite.io/v1/databases/gym_genie/collections/waitlist/documents',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Appwrite-Project': '69b37d30001381bccf9b',
+                        },
+                        body: JSON.stringify({
+                            documentId: 'unique()',
+                            data: { email, submittedAt: new Date().toISOString() },
+                        }),
+                    }
+                );
+
+                if (!res.ok) throw new Error(await res.text());
+                localStorage.setItem('gg_waitlist', email);
+                showWaitlistSuccess();
+            } catch (err) {
+                btn.textContent = 'Secure Spot';
+                btn.disabled = false;
+                const msg = err?.message?.includes('fetch')
+                    ? 'Network error — make sure the page is served over HTTP (not file://).'
+                    : 'Something went wrong. Please try again.';
+                showWaitlistError(msg);
+                console.error('[waitlist]', err);
+            }
+        });
+
+        function showWaitlistSuccess() {
+            document.getElementById('waitlist-form').style.display = 'none';
+            document.getElementById('waitlist-success').style.display = 'block';
+            document.getElementById('waitlist-error').style.display = 'none';
+        }
+
+        function showWaitlistError(msg) {
+            const el = document.getElementById('waitlist-error');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+    </script>
 </body>
 
 </html>

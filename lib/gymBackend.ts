@@ -342,6 +342,5 @@ export const reportEquipmentCondition = async (
       maintenanceComment: maintenanceComment.trim() || undefined,
       reportedAt: new Date().toISOString(),
     },
-    getOwnedPermissions(userId),
   );
 };

@@ -64,7 +64,7 @@ export default function EquipmentScreen() {
     try {
       setPendingKey(`condition:${equipmentId}`);
       setStatusMessage(null);
-      await reportEquipmentCondition(equipmentId, condition, user.id);
+      await reportEquipmentCondition(equipmentId, condition, "", user.id);
       setStatusMessage(`${itemName} marked as ${condition}.`);
     } finally {
       setPendingKey(null);

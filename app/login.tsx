@@ -1,6 +1,6 @@
 import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View, Image } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppButton } from "@/components/ui/AppButton";
 import { FormField } from "@/components/ui/FormField";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -19,13 +19,9 @@ interface LoginForm {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { status, login, authError, clearAuthError } = useAuth();
+  const { status, login, clearAuthError } = useAuth();
 
-  const [form, setForm] = useState<LoginForm>({
-    email: "",
-    password: "",
-  });
-
+  const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof LoginForm, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,41 +30,23 @@ export default function LoginScreen() {
     clearAuthError();
   }, [clearAuthError]);
 
-  if (status === "loading") {
-    return <LoadingScreen text="Loading login..." />;
-  }
-
-  if (status === "authenticated") {
-    return <Redirect href="./home" />;
-  }
+  if (status === "loading") return <LoadingScreen text="Loading login..." />;
+  if (status === "authenticated") return <Redirect href="./home" />;
 
   const validate = (): boolean => {
-    const nextErrors: Partial<Record<keyof LoginForm, string>> = {};
-
-    if (!isValidEmail(form.email)) {
-      nextErrors.email = "Enter a valid email address.";
-    }
-
-    if (!isNonEmpty(form.password)) {
-      nextErrors.password = "Password is required.";
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    const e: Partial<Record<keyof LoginForm, string>> = {};
+    if (!isValidEmail(form.email)) e.email = "Enter a valid email address.";
+    if (!isNonEmpty(form.password)) e.password = "Password is required.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
-
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-
-      await login({
-        email: form.email,
-        password: form.password,
-      });
-
+      await login({ email: form.email, password: form.password });
       router.replace("./home");
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to log in.");
@@ -81,14 +59,13 @@ export default function LoginScreen() {
     <ScreenContainer
       title="Log In"
       subtitle="Access your Gym Genie dashboard, queues, and tools."
+      safeAreaTop
     >
-      {/* LOGO */}
       <View style={styles.logoContainer}>
         <Image source={logo} style={styles.logo} resizeMode="contain" />
         <Text style={styles.brandText}>Gym Genie</Text>
       </View>
 
-      {authError ? <StatusBanner type="warning" message={authError} /> : null}
       {submitError ? <StatusBanner type="error" message={submitError} /> : null}
 
       <View style={styles.form}>
@@ -102,12 +79,11 @@ export default function LoginScreen() {
           autoComplete="email"
           error={errors.email}
         />
-
         <FormField
           label="Password"
           value={form.password}
           onChangeText={(password) => setForm((c) => ({ ...c, password }))}
-          placeholder="********"
+          placeholder="Enter your password"
           secureTextEntry
           autoCapitalize="none"
           autoComplete="password"

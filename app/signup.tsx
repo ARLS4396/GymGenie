@@ -1,8 +1,6 @@
 import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-
 import { AppButton } from "@/components/ui/AppButton";
 import { FormField } from "@/components/ui/FormField";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -18,28 +16,24 @@ interface SignUpForm {
   username: string;
   fitnessGoal: string;
   password: string;
+  confirmPassword: string;
 }
 
 const FITNESS_GOALS = [
-  { label: "Lose weight", value: "lose_weight" },
-  { label: "Build muscle", value: "build_muscle" },
-  { label: "Maintain fitness", value: "maintain" },
-  { label: "Improve endurance", value: "endurance" },
-  { label: "General health", value: "general_health" },
+  { label: "Lose Weight", value: "lose_weight" },
+  { label: "Build Muscle", value: "build_muscle" },
+  { label: "Maintain", value: "maintain" },
+  { label: "Endurance", value: "endurance" },
+  { label: "General Health", value: "general_health" },
 ];
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const { status, signUp, authError, clearAuthError } = useAuth();
+  const { status, signUp, clearAuthError } = useAuth();
 
   const [form, setForm] = useState<SignUpForm>({
-    fullName: "",
-    email: "",
-    username: "",
-    fitnessGoal: "",
-    password: "",
+    fullName: "", email: "", username: "", fitnessGoal: "", password: "", confirmPassword: "",
   });
-
   const [errors, setErrors] = useState<Partial<Record<keyof SignUpForm, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,34 +42,27 @@ export default function SignUpScreen() {
     clearAuthError();
   }, [clearAuthError]);
 
-  if (status === "loading") {
-    return <LoadingScreen text="Loading sign up..." />;
-  }
-
-  if (status === "authenticated") {
-    return <Redirect href="./home" />;
-  }
+  if (status === "loading") return <LoadingScreen text="Loading sign up..." />;
+  if (status === "authenticated") return <Redirect href="./home" />;
 
   const validate = (): boolean => {
-    const nextErrors: Partial<Record<keyof SignUpForm, string>> = {};
-
-    if (!isNonEmpty(form.fullName)) nextErrors.fullName = "Full name is required.";
-    if (!isValidEmail(form.email)) nextErrors.email = "Enter a valid email address.";
-    if (!isNonEmpty(form.username)) nextErrors.username = "Username is required.";
-    if (!isNonEmpty(form.fitnessGoal)) nextErrors.fitnessGoal = "Select a fitness goal.";
-    if (!isValidPassword(form.password)) nextErrors.password = "Password must be at least 8 characters.";
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    const e: Partial<Record<keyof SignUpForm, string>> = {};
+    if (!isNonEmpty(form.fullName)) e.fullName = "Full name is required.";
+    if (!isValidEmail(form.email)) e.email = "Enter a valid email address.";
+    if (!isNonEmpty(form.username)) e.username = "Username is required.";
+    if (!isNonEmpty(form.fitnessGoal)) e.fitnessGoal = "Select a fitness goal.";
+    if (!isValidPassword(form.password)) e.password = "Password must be at least 8 characters.";
+    if (!form.confirmPassword) e.confirmPassword = "Please confirm your password.";
+    else if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
-
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-
       await signUp(form);
       router.replace("./home");
     } catch (error) {
@@ -89,8 +76,8 @@ export default function SignUpScreen() {
     <ScreenContainer
       title="Create Account"
       subtitle="Set up your Gym Genie profile."
+      safeAreaTop
     >
-      {authError ? <StatusBanner type="warning" message={authError} /> : null}
       {submitError ? <StatusBanner type="error" message={submitError} /> : null}
 
       <View style={styles.form}>
@@ -102,7 +89,6 @@ export default function SignUpScreen() {
           autoCapitalize="words"
           error={errors.fullName}
         />
-
         <FormField
           label="Email"
           value={form.email}
@@ -110,9 +96,9 @@ export default function SignUpScreen() {
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
+          autoComplete="email"
           error={errors.email}
         />
-
         <FormField
           label="Username"
           value={form.username}
@@ -122,31 +108,26 @@ export default function SignUpScreen() {
           error={errors.username}
         />
 
-        {/* FITNESS GOAL DROPDOWN */}
-        <View>
-          <Text style={styles.label}>Fitness Goal</Text>
-
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={form.fitnessGoal}
-              onValueChange={(value: string) =>
-                setForm((c) => ({ ...c, fitnessGoal: value }))
-              }
-            >
-              <Picker.Item label="Select a goal..." value="" />
-              {FITNESS_GOALS.map((goal) => (
-                <Picker.Item
+        {/* Fitness Goal chips */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>Fitness Goal</Text>
+          <View style={styles.chipGrid}>
+            {FITNESS_GOALS.map((goal) => {
+              const isActive = form.fitnessGoal === goal.value;
+              return (
+                <Pressable
                   key={goal.value}
-                  label={goal.label}
-                  value={goal.value}
-                />
-              ))}
-            </Picker>
+                  style={[styles.chip, isActive && styles.chipActive]}
+                  onPress={() => setForm((c) => ({ ...c, fitnessGoal: goal.value }))}
+                >
+                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                    {goal.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-
-          {errors.fitnessGoal && (
-            <Text style={styles.errorText}>{errors.fitnessGoal}</Text>
-          )}
+          {errors.fitnessGoal ? <Text style={styles.errorText}>{errors.fitnessGoal}</Text> : null}
         </View>
 
         <FormField
@@ -156,7 +137,18 @@ export default function SignUpScreen() {
           placeholder="At least 8 characters"
           secureTextEntry
           autoCapitalize="none"
+          autoComplete="new-password"
           error={errors.password}
+        />
+        <FormField
+          label="Confirm Password"
+          value={form.confirmPassword}
+          onChangeText={(confirmPassword) => setForm((c) => ({ ...c, confirmPassword }))}
+          placeholder="Re-enter your password"
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="new-password"
+          error={errors.confirmPassword}
         />
       </View>
 
@@ -180,6 +172,43 @@ const styles = StyleSheet.create({
   form: {
     gap: theme.spacing.sm,
   },
+  fieldGroup: {
+    gap: theme.spacing.xs,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+  },
+  chipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  chipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+  },
+  chipTextActive: {
+    color: theme.colors.textPrimary,
+  },
+  errorText: {
+    fontSize: 12,
+    color: theme.colors.errorText,
+  },
   footer: {
     flexDirection: "row",
     alignItems: "center",
@@ -193,23 +222,5 @@ const styles = StyleSheet.create({
   footerLink: {
     color: theme.colors.primary,
     fontWeight: "700",
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: theme.colors.textSecondary,
-    marginBottom: 6,
-  },
-  pickerWrapper: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    overflow: "hidden",
-    backgroundColor: theme.colors.background,
-  },
-  errorText: {
-    color: "red",
-    fontSize: 12,
-    marginTop: 4,
   },
 });

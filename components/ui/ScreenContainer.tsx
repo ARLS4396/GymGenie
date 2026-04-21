@@ -6,6 +6,7 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "@/styles/theme";
 
 interface ScreenContainerProps {
@@ -14,6 +15,7 @@ interface ScreenContainerProps {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: ViewStyle;
+  safeAreaTop?: boolean;
 }
 
 export const ScreenContainer = ({
@@ -22,9 +24,13 @@ export const ScreenContainer = ({
   children,
   scroll = true,
   contentStyle,
+  safeAreaTop = false,
 }: ScreenContainerProps) => {
+  const insets = useSafeAreaInsets();
+  const topPadding = safeAreaTop ? insets.top + theme.spacing.lg : theme.spacing.lg;
+
   const content = (
-    <View style={[styles.content, contentStyle]}>
+    <View style={[styles.content, { paddingTop: topPadding }, contentStyle]}>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -61,7 +67,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
     gap: theme.spacing.md,
   },
   header: {

@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { usePathname, useRouter, type Href } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/styles/theme";
 
 type NavItem = {
@@ -15,13 +14,12 @@ const navItems: NavItem[] = [
   { label: "Profile", path: "/profile", href: "./profile" },
   { label: "Queue", path: "/queue", href: "./queue" },
   { label: "Equipment", path: "/equipment", href: "./equipment" },
+  { label: "Settings", path: "/settings", href: "./settings" },
 ];
 
 export const AppNav = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const activeRoute = useMemo(() => {
     const matched = navItems.find(
@@ -30,51 +28,32 @@ export const AppNav = () => {
     return matched?.path;
   }, [pathname]);
 
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await logout();
-      router.replace("../login");
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.links}>
-        {navItems.map((item) => {
-          const isActiveRoute = activeRoute === item.path;
+      <Text style={styles.brand}>Gym Genie</Text>
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.links}
+        style={styles.linksScroll}
+      >
+        {navItems.map((item) => {
+          const isActive = activeRoute === item.path;
           return (
             <Pressable
               key={item.label}
               onPress={() => router.push(item.href)}
-              style={[styles.link, isActiveRoute ? styles.activeLink : null]}
+              style={styles.link}
             >
-              <Text
-                style={[
-                  styles.linkText,
-                  isActiveRoute ? styles.activeLinkText : null,
-                ]}
-              >
+              <Text style={[styles.linkText, isActive && styles.activeLinkText]}>
                 {item.label}
               </Text>
+              {isActive && <View style={styles.activeBar} />}
             </Pressable>
           );
         })}
       </ScrollView>
-      <Pressable
-        onPress={handleLogout}
-        disabled={isLoggingOut}
-        style={({ pressed }) => [
-          styles.logout,
-          pressed ? styles.logoutPressed : null,
-          isLoggingOut ? styles.logoutDisabled : null,
-        ]}
-      >
-        <Text style={styles.logoutText}>{isLoggingOut ? "Logging out..." : "Log out"}</Text>
-      </Pressable>
     </View>
   );
 };
@@ -85,51 +64,49 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     gap: theme.spacing.sm,
+    height: 52,
+  },
+  brand: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: theme.colors.primary,
+    letterSpacing: 0.3,
+    flexShrink: 0,
+  },
+  linksScroll: {
+    flex: 1,
   },
   links: {
-    gap: theme.spacing.sm,
-    alignItems: "center",
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 2,
   },
   link: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 8,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.secondary,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+    height: 52,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
   },
-  activeLink: {
+  activeBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 8,
+    right: 8,
+    height: 2.5,
+    borderRadius: 2,
     backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   linkText: {
-    color: theme.colors.textPrimary,
+    color: theme.colors.textSecondary,
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   activeLinkText: {
-    color: "#FFFFFF",
-  },
-  logout: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 8,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.danger,
-  },
-  logoutPressed: {
-    backgroundColor: theme.colors.dangerPressed,
-  },
-  logoutDisabled: {
-    opacity: 0.7,
-  },
-  logoutText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
+    color: theme.colors.textPrimary,
+    fontWeight: "700",
   },
 });

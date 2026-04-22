@@ -1,156 +1,173 @@
-import { useMemo } from "react";
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
-import { AppButton } from "@/components/ui/AppButton";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ScreenContainer } from "@/components/ui/ScreenContainer";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { useAuth } from "@/context/AuthContext";
-import { useGymData } from "@/context/GymDataContext";
 import { theme } from "@/styles/theme";
+
+const quickActions = [
+  { emoji: "👤", label: "Profile", path: "./profile" },
+  { emoji: "⏱", label: "Queue", path: "./queue" },
+  { emoji: "🏋️", label: "Equipment", path: "./equipment" },
+  { emoji: "💳", label: "Membership", path: "./membership" },
+] as const;
+
+const regularHours = [
+  { day: "Monday – Friday", hours: "5:00 AM – 11:00 PM" },
+  { day: "Saturday – Sunday", hours: "7:00 AM – 9:00 PM" },
+];
+
+const holidayHours = [
+  { day: "Memorial Day", hours: "8:00 AM – 3:00 PM" },
+  { day: "4th of July", hours: "8:00 AM – 3:00 PM" },
+  { day: "Thanksgiving", hours: "Closed" },
+  { day: "Christmas Eve", hours: "Closes at 4:00 PM" },
+  { day: "Christmas Day", hours: "Closed" },
+  { day: "New Year's Eve", hours: "Closes at 4:00 PM" },
+];
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { machines, equipment } = useGymData();
-
-  const dashboardStats = useMemo(() => {
-    const activeQueues = machines.filter((machine) => machine.queueUserIds.length > 0).length;
-    const joinedQueues = user
-      ? machines.filter((machine) => machine.queueUserIds.includes(user.id)).length
-      : 0;
-    const totalAvailableEquipment = equipment.reduce(
-      (sum, item) => sum + item.totalQuantity - item.checkedOutBy.length,
-      0,
-    );
-    const equipmentCheckedOutByUser = user
-      ? equipment.filter((item) => item.checkedOutBy.includes(user.id)).length
-      : 0;
-
-    return {
-      activeQueues,
-      joinedQueues,
-      totalAvailableEquipment,
-      equipmentCheckedOutByUser,
-    };
-  }, [equipment, machines, user]);
 
   return (
     <ScreenContainer
       title="Dashboard"
-      subtitle="Gym Genie prototype overview for profile management, machine queues, and equipment tracking."
+      subtitle="Your workout operations hub."
     >
-      <SectionCard style={styles.heroCard}>
-        <Text style={styles.eyebrow}>Member Snapshot</Text>
-        <Text style={styles.heroTitle}>Welcome back, {user?.fullName ?? "Athlete"}</Text>
-        <Text style={styles.heroBody}>
-          Use this dashboard to move through the main Sprint 1 flows quickly during a
-          demo.
+      {/* Welcome card */}
+      <SectionCard>
+        <Text style={styles.welcomeName}>
+          Welcome back, {user?.fullName?.split(" ")[0] ?? "Athlete"} 👋
+        </Text>
+        <Text style={styles.welcomeBody}>
+          Track your gym flow with fast queue actions, equipment checkouts, and live gym updates.
         </Text>
       </SectionCard>
 
-      <View style={styles.statsGrid}>
-        <SectionCard style={styles.statCard}>
-          <Text style={styles.statValue}>{dashboardStats.joinedQueues}</Text>
-          <Text style={styles.statLabel}>Queues You Joined</Text>
-        </SectionCard>
-        <SectionCard style={styles.statCard}>
-          <Text style={styles.statValue}>{dashboardStats.activeQueues}</Text>
-          <Text style={styles.statLabel}>Active Machine Queues</Text>
-        </SectionCard>
-        <SectionCard style={styles.statCard}>
-          <Text style={styles.statValue}>{dashboardStats.totalAvailableEquipment}</Text>
-          <Text style={styles.statLabel}>Equipment Units Available</Text>
-        </SectionCard>
-        <SectionCard style={styles.statCard}>
-          <Text style={styles.statValue}>{dashboardStats.equipmentCheckedOutByUser}</Text>
-          <Text style={styles.statLabel}>Items Checked Out By You</Text>
-        </SectionCard>
-      </View>
-
+      {/* Quick Actions */}
       <SectionCard>
-        <Text style={styles.sectionTitle}>Primary Prototype Flows</Text>
-        <View style={styles.quickActions}>
-          <AppButton
-            label="View Profile"
-            variant="secondary"
-            onPress={() => router.push("./profile")}
-          />
-          <AppButton
-            label="Manage Queue"
-            variant="secondary"
-            onPress={() => router.push("./queue")}
-          />
-          <AppButton
-            label="Open Equipment"
-            variant="secondary"
-            onPress={() => router.push("./equipment")}
-          />
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionGrid}>
+          {quickActions.map((action) => (
+            <Pressable
+              key={action.label}
+              style={({ pressed }) => [
+                styles.actionCard,
+                pressed && styles.actionCardPressed,
+              ]}
+              onPress={() => router.push(action.path)}
+            >
+              <Text style={styles.actionEmoji}>{action.emoji}</Text>
+              <Text style={styles.actionLabel}>{action.label}</Text>
+            </Pressable>
+          ))}
         </View>
       </SectionCard>
 
+      {/* Gym Hours */}
       <SectionCard>
-        <Text style={styles.sectionTitle}>Sprint Scope Coverage</Text>
-        <Text style={styles.sectionBody}>
-          This prototype demonstrates authenticated access, profile storage and
-          updates, Appwrite-backed machine queue actions, equipment checkout and
-          return, and equipment condition reporting.
-        </Text>
+        <Text style={styles.sectionTitle}>Gym Hours</Text>
+
+        <Text style={styles.hoursGroup}>Regular Hours</Text>
+        {regularHours.map(({ day, hours }) => (
+          <View key={day} style={styles.hoursRow}>
+            <Text style={styles.hoursDay}>{day}</Text>
+            <Text style={styles.hoursTime}>{hours}</Text>
+          </View>
+        ))}
+
+        <View style={styles.divider} />
+
+        <Text style={styles.hoursGroup}>Holiday Hours</Text>
+        {holidayHours.map(({ day, hours }) => (
+          <View key={day} style={styles.hoursRow}>
+            <Text style={styles.hoursDay}>{day}</Text>
+            <Text style={[styles.hoursTime, hours === "Closed" && styles.hoursClosed]}>
+              {hours}
+            </Text>
+          </View>
+        ))}
       </SectionCard>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  heroCard: {
-    backgroundColor: "#F8FCFA",
-  },
-  eyebrow: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: theme.colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  heroTitle: {
-    fontSize: 24,
+  welcomeName: {
+    fontSize: 18,
     fontWeight: "700",
     color: theme.colors.textPrimary,
   },
-  heroBody: {
+  welcomeBody: {
     fontSize: 14,
-    lineHeight: 22,
     color: theme.colors.textSecondary,
+    lineHeight: 20,
   },
-  statsGrid: {
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
+  },
+  actionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: theme.spacing.sm,
   },
-  statCard: {
-    flexGrow: 1,
-    minWidth: 140,
+  actionCard: {
+    flex: 1,
+    minWidth: "44%",
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    alignItems: "center",
+    gap: 6,
   },
-  statValue: {
+  actionCardPressed: {
+    backgroundColor: theme.colors.secondary,
+  },
+  actionEmoji: {
     fontSize: 28,
-    fontWeight: "700",
-    color: theme.colors.textPrimary,
   },
-  statLabel: {
+  actionLabel: {
     fontSize: 13,
-    lineHeight: 18,
-    color: theme.colors.textSecondary,
-  },
-  sectionTitle: {
+    fontWeight: "600",
     color: theme.colors.textPrimary,
-    fontSize: 18,
+  },
+  hoursGroup: {
+    fontSize: 13,
     fontWeight: "700",
+    color: theme.colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: theme.spacing.xs,
   },
-  sectionBody: {
-    color: theme.colors.textSecondary,
+  hoursRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 3,
+  },
+  hoursDay: {
     fontSize: 14,
-    lineHeight: 22,
+    color: theme.colors.textPrimary,
+    flex: 1,
   },
-  quickActions: {
-    gap: theme.spacing.sm,
+  hoursTime: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: "500",
+  },
+  hoursClosed: {
+    color: theme.colors.danger,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: theme.spacing.xs,
   },
 });

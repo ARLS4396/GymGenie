@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ScrollView,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
   Image,
   type ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "@/styles/theme";
 
 const logo = require("@/assets/images/logo.png");
@@ -18,6 +18,7 @@ interface ScreenContainerProps {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: ViewStyle;
+  safeAreaTop?: boolean;
 }
 
 export const ScreenContainer = ({
@@ -26,9 +27,13 @@ export const ScreenContainer = ({
   children,
   scroll = true,
   contentStyle,
+  safeAreaTop = false,
 }: ScreenContainerProps) => {
+  const insets = useSafeAreaInsets();
+  const topPadding = safeAreaTop ? insets.top + theme.spacing.lg : theme.spacing.lg;
+
   const content = (
-    <View style={[styles.content, contentStyle]}>
+    <View style={[styles.content, { paddingTop: topPadding }, contentStyle]}>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -42,41 +47,50 @@ export const ScreenContainer = ({
     </View>
   );
 
-  return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
-      {scroll ? (
-        <ScrollView contentContainerStyle={styles.scrollContent}>{content}</ScrollView>
-      ) : (
-        content
-      )}
-    </SafeAreaView>
-  );
+  if (scroll) {
+    return (
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {content}
+      </ScrollView>
+    );
+  }
+
+  return <View style={styles.root}>{content}</View>;
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: theme.spacing.xl,
   },
   content: {
     flex: 1,
-    padding: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
     gap: theme.spacing.md,
   },
   header: {
-    gap: theme.spacing.xs,
+    gap: 6,
+    marginBottom: theme.spacing.xs,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
     color: theme.colors.textPrimary,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: theme.colors.textSecondary,
+    lineHeight: 20,
   },
   children: {
     gap: theme.spacing.md,

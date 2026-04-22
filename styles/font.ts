@@ -23,3 +23,4 @@ export const fontStyles = StyleSheet.create({
     fontWeight: 600,
   },
 });
+

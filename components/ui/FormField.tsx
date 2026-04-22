@@ -1,10 +1,13 @@
+import { useState } from "react";
 import {
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
   type KeyboardTypeOptions,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/styles/theme";
 
 interface FormFieldProps {
@@ -42,28 +45,47 @@ export const FormField = ({
   error,
   editable = true,
 }: FormFieldProps) => {
+  const [hidden, setHidden] = useState(true);
+  const isPassword = secureTextEntry === true;
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={theme.colors.textSecondary}
-        secureTextEntry={secureTextEntry}
-        autoCapitalize={autoCapitalize}
-        keyboardType={keyboardType}
-        autoComplete={autoComplete}
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-        textAlignVertical={multiline ? "top" : "center"}
-        style={[
-          styles.input,
-          multiline ? styles.textArea : null,
-          error ? styles.inputError : null,
-        ]}
-        editable={editable}
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={theme.colors.textSecondary}
+          secureTextEntry={isPassword ? hidden : false}
+          autoCapitalize={autoCapitalize}
+          keyboardType={keyboardType}
+          autoComplete={autoComplete}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          textAlignVertical={multiline ? "top" : "center"}
+          style={[
+            styles.input,
+            multiline ? styles.textArea : null,
+            error ? styles.inputError : null,
+            isPassword ? styles.inputWithToggle : null,
+          ]}
+          editable={editable}
+        />
+        {isPassword ? (
+          <Pressable
+            onPress={() => setHidden((h) => !h)}
+            style={styles.eyeButton}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={hidden ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color={theme.colors.textSecondary}
+            />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
@@ -78,6 +100,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+  inputRow: {
+    position: "relative",
+    justifyContent: "center",
+  },
   input: {
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -87,6 +113,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     color: theme.colors.textPrimary,
   },
+  inputWithToggle: {
+    paddingRight: 44,
+  },
   textArea: {
     minHeight: 96,
     paddingTop: theme.spacing.sm,
@@ -94,6 +123,12 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: theme.colors.errorText,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 12,
+    height: "100%",
+    justifyContent: "center",
   },
   errorText: {
     color: theme.colors.errorText,

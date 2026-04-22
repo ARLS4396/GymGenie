@@ -1,12 +1,12 @@
 export const theme = {
   colors: {
-    background: "#F3F6F8",
+    background: "#FFF9DB",
     surface: "#FFFFFF",
     border: "#D9E2EC",
     textPrimary: "#102A43",
     textSecondary: "#486581",
-    primary: "#0B6E4F",
-    primaryPressed: "#09553D",
+    primary: "#FFD54F",
+    primaryPressed: "#E6C200",
     secondary: "#E7EEF4",
     secondaryPressed: "#D7E3EC",
     danger: "#C81E4A",

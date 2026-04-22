@@ -26,3 +26,4 @@ export interface AuthContextValue {
   refreshUser: () => Promise<void>;
   clearAuthError: () => void;
 }
+

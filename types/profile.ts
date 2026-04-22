@@ -1,18 +1,26 @@
-import type { Models } from "react-native-appwrite";
-
 export interface ProfilePrefs {
   username?: string;
   fitnessGoal?: string;
   profileImage?: string;
+  age?: string;
+  height?: string;
+  weight?: string;
+  targetWeight?: string;
+  activityLevel?: string;
+  membershipTier?: string;
 }
 
-export interface ProfileRecord extends Models.Document {
-  userId: string;
+export interface ProfileUpdateInput {
   fullName: string;
-  email: string;
   username: string;
   fitnessGoal: string;
   profileImage?: string;
+  age?: string;
+  height?: string;
+  weight?: string;
+  targetWeight?: string;
+  activityLevel?: string;
+  membershipTier?: string;
 }
 
 export interface UserProfile {
@@ -22,11 +30,11 @@ export interface UserProfile {
   username: string;
   fitnessGoal: string;
   profileImage?: string;
+  age?: string;
+  height?: string;
+  weight?: string;
+  targetWeight?: string;
+  activityLevel?: string;
+  membershipTier?: string;
 }
 
-export interface ProfileUpdateInput {
-  fullName: string;
-  username: string;
-  fitnessGoal: string;
-  profileImage?: string;
-}

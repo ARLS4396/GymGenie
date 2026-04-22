@@ -1,6 +1,7 @@
 import { Redirect, Slot } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { AppNav } from "@/components/AppNav";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useAuth } from "@/context/AuthContext";
@@ -19,6 +20,7 @@ export default function ProtectedLayout() {
 
   return (
     <SafeAreaView edges={["top"]} style={styles.container}>
+      <StatusBar style="dark" />
       <AppNav />
       <View style={styles.content}>
         <Slot />

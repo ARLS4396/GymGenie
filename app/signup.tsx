@@ -16,20 +16,24 @@ interface SignUpForm {
   username: string;
   fitnessGoal: string;
   password: string;
+  confirmPassword: string;
 }
+
+const FITNESS_GOALS = [
+  { label: "Lose Weight", value: "lose_weight" },
+  { label: "Build Muscle", value: "build_muscle" },
+  { label: "Maintain", value: "maintain" },
+  { label: "Endurance", value: "endurance" },
+  { label: "General Health", value: "general_health" },
+];
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const { status, signUp, authError, clearAuthError } = useAuth();
+  const { status, signUp, clearAuthError } = useAuth();
 
   const [form, setForm] = useState<SignUpForm>({
-    fullName: "",
-    email: "",
-    username: "",
-    fitnessGoal: "",
-    password: "",
+    fullName: "", email: "", username: "", fitnessGoal: "", password: "", confirmPassword: "",
   });
-
   const [errors, setErrors] = useState<Partial<Record<keyof SignUpForm, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,46 +42,24 @@ export default function SignUpScreen() {
     clearAuthError();
   }, [clearAuthError]);
 
-  if (status === "loading") {
-    return <LoadingScreen text="Loading sign up..." />;
-  }
-
-  if (status === "authenticated") {
-    return <Redirect href="./home" />;
-  }
+  if (status === "loading") return <LoadingScreen text="Loading sign up..." />;
+  if (status === "authenticated") return <Redirect href="./home" />;
 
   const validate = (): boolean => {
-    const nextErrors: Partial<Record<keyof SignUpForm, string>> = {};
-
-    if (!isNonEmpty(form.fullName)) {
-      nextErrors.fullName = "Full name is required.";
-    }
-
-    if (!isValidEmail(form.email)) {
-      nextErrors.email = "Enter a valid email address.";
-    }
-
-    if (!isNonEmpty(form.username)) {
-      nextErrors.username = "Username is required.";
-    }
-
-    if (!isNonEmpty(form.fitnessGoal)) {
-      nextErrors.fitnessGoal = "Fitness goal is required.";
-    }
-
-    if (!isValidPassword(form.password)) {
-      nextErrors.password = "Password must be at least 8 characters.";
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    const e: Partial<Record<keyof SignUpForm, string>> = {};
+    if (!isNonEmpty(form.fullName)) e.fullName = "Full name is required.";
+    if (!isValidEmail(form.email)) e.email = "Enter a valid email address.";
+    if (!isNonEmpty(form.username)) e.username = "Username is required.";
+    if (!isNonEmpty(form.fitnessGoal)) e.fitnessGoal = "Select a fitness goal.";
+    if (!isValidPassword(form.password)) e.password = "Password must be at least 8 characters.";
+    if (!form.confirmPassword) e.confirmPassword = "Please confirm your password.";
+    else if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) {
-      return;
-    }
-
+    if (!validate()) return;
     try {
       setIsSubmitting(true);
       setSubmitError(null);
@@ -93,25 +75,24 @@ export default function SignUpScreen() {
   return (
     <ScreenContainer
       title="Create Account"
-      subtitle="Set up your gym profile to unlock queues and equipment checkouts."
+      subtitle="Set up your Gym Genie profile."
+      safeAreaTop
     >
-      {authError ? <StatusBanner type="warning" message={authError} /> : null}
       {submitError ? <StatusBanner type="error" message={submitError} /> : null}
 
       <View style={styles.form}>
         <FormField
           label="Full Name"
           value={form.fullName}
-          onChangeText={(fullName) => setForm((current) => ({ ...current, fullName }))}
+          onChangeText={(fullName) => setForm((c) => ({ ...c, fullName }))}
           placeholder="Jane Doe"
           autoCapitalize="words"
-          autoComplete="name"
           error={errors.fullName}
         />
         <FormField
           label="Email"
           value={form.email}
-          onChangeText={(email) => setForm((current) => ({ ...current, email }))}
+          onChangeText={(email) => setForm((c) => ({ ...c, email }))}
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -121,31 +102,53 @@ export default function SignUpScreen() {
         <FormField
           label="Username"
           value={form.username}
-          onChangeText={(username) => setForm((current) => ({ ...current, username }))}
+          onChangeText={(username) => setForm((c) => ({ ...c, username }))}
           placeholder="gymgoals99"
           autoCapitalize="none"
-          autoComplete="username"
           error={errors.username}
         />
-        <FormField
-          label="Fitness Goal"
-          value={form.fitnessGoal}
-          onChangeText={(fitnessGoal) =>
-            setForm((current) => ({ ...current, fitnessGoal }))
-          }
-          placeholder="Build strength and consistency"
-          autoCapitalize="sentences"
-          error={errors.fitnessGoal}
-        />
+
+        {/* Fitness Goal chips */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>Fitness Goal</Text>
+          <View style={styles.chipGrid}>
+            {FITNESS_GOALS.map((goal) => {
+              const isActive = form.fitnessGoal === goal.value;
+              return (
+                <Pressable
+                  key={goal.value}
+                  style={[styles.chip, isActive && styles.chipActive]}
+                  onPress={() => setForm((c) => ({ ...c, fitnessGoal: goal.value }))}
+                >
+                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                    {goal.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {errors.fitnessGoal ? <Text style={styles.errorText}>{errors.fitnessGoal}</Text> : null}
+        </View>
+
         <FormField
           label="Password"
           value={form.password}
-          onChangeText={(password) => setForm((current) => ({ ...current, password }))}
+          onChangeText={(password) => setForm((c) => ({ ...c, password }))}
           placeholder="At least 8 characters"
           secureTextEntry
           autoCapitalize="none"
           autoComplete="new-password"
           error={errors.password}
+        />
+        <FormField
+          label="Confirm Password"
+          value={form.confirmPassword}
+          onChangeText={(confirmPassword) => setForm((c) => ({ ...c, confirmPassword }))}
+          placeholder="Re-enter your password"
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="new-password"
+          error={errors.confirmPassword}
         />
       </View>
 
@@ -168,6 +171,43 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   form: {
     gap: theme.spacing.sm,
+  },
+  fieldGroup: {
+    gap: theme.spacing.xs,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+  },
+  chipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  chipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+  },
+  chipTextActive: {
+    color: theme.colors.textPrimary,
+  },
+  errorText: {
+    fontSize: 12,
+    color: theme.colors.errorText,
   },
   footer: {
     flexDirection: "row",

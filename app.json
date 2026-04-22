@@ -19,8 +19,8 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/appwrite-logo.png"
+      "output": "single",
+      "favicon": "./assets/images/logo.png"
     },
     "plugins": [
       "expo-router",

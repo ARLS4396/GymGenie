@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
+import { useRef } from "react";
 import {
-  ScrollView,
+  Animated,
+  Image,
   StyleSheet,
   Text,
   View,
-  Image,
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -31,6 +32,13 @@ export const ScreenContainer = ({
 }: ScreenContainerProps) => {
   const insets = useSafeAreaInsets();
   const topPadding = safeAreaTop ? insets.top + theme.spacing.lg : theme.spacing.lg;
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const logoTranslateY = scrollY.interpolate({
+    inputRange: [0, 400],
+    outputRange: [0, -120],
+    extrapolate: "clamp",
+  });
 
   const content = (
     <View style={[styles.content, { paddingTop: topPadding }, contentStyle]}>
@@ -38,25 +46,35 @@ export const ScreenContainer = ({
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
-
       <View style={styles.children}>{children}</View>
-
-      <View style={styles.logoContainer}>
-        <Image source={logo} style={styles.logo} resizeMode="contain" />
-      </View>
     </View>
   );
 
   if (scroll) {
     return (
-      <ScrollView
-        style={styles.root}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {content}
-      </ScrollView>
+      <View style={styles.root}>
+        {/* Parallax watermark */}
+        <Animated.View
+          style={[styles.watermark, { transform: [{ translateY: logoTranslateY }] }]}
+          pointerEvents="none"
+        >
+          <Image source={logo} style={styles.watermarkImage} resizeMode="contain" />
+        </Animated.View>
+
+        <Animated.ScrollView
+          style={styles.fill}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true },
+          )}
+          scrollEventThrottle={16}
+        >
+          {content}
+        </Animated.ScrollView>
+      </View>
     );
   }
 
@@ -68,14 +86,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  fill: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     paddingBottom: theme.spacing.xl,
+  },
+  watermark: {
+    position: "absolute",
+    alignSelf: "center",
+    top: "25%",
+    zIndex: 0,
+    opacity: 0.055,
+  },
+  watermarkImage: {
+    width: 320,
+    height: 320,
   },
   content: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
     gap: theme.spacing.md,
+    zIndex: 1,
   },
   header: {
     gap: 6,
@@ -94,14 +127,5 @@ const styles = StyleSheet.create({
   },
   children: {
     gap: theme.spacing.md,
-  },
-  logoContainer: {
-    marginTop: 4,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logo: {
-    width: 560,
-    height: 320,
   },
 });

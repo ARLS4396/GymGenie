@@ -34,14 +34,28 @@
         }
       ],
       [
-      "expo-font",
-      {
-        "fonts": ["node_modules/@expo-google-fonts/poppins/300Light/Poppins_300Light.ttf"]
-      }
+        "expo-font",
+        {
+          "fonts": [
+            "node_modules/@expo-google-fonts/poppins/300Light/Poppins_300Light.ttf"
+          ]
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "18a9eb50-4597-4469-9603-66818ca002d8"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/18a9eb50-4597-4469-9603-66818ca002d8"
     }
   }
 }
